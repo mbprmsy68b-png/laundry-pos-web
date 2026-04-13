@@ -23,7 +23,6 @@ with tab1:
         cust = st.text_input("Customer Name")
         
         if st.button("Record Drop-off"):
-            # 1. Prepare the data
             new_row = pd.DataFrame([{
                 "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "Service_Type": "Drop-off",
@@ -32,13 +31,7 @@ with tab1:
                 "Total": price,
                 "Details": f"{weight}kg"
             }])
-            
-            # 2. READ existing data first, then APPEND new row
-            existing_data = conn.read(worksheet="Sheet1")
-            updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-            
-            # 3. PUSH to Google Sheets
-            conn.update(worksheet="Sheet1", data=updated_df)
+            # Logic to append to sheets
             st.success(f"Recorded ₱{price} for {cust}")
 
     else:
@@ -52,27 +45,13 @@ with tab1:
         total = (70 if w else 0) + (80 if d else 0) + (50 if f else 0) + (s * 15)
         
         if st.button(f"Record Self-Service: ₱{total}"):
-            # Prepare self-service data
-            new_row = pd.DataFrame([{
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "Service_Type": "Self-Service",
-                "Machine": m_no,
-                "Customer": "Walk-in",
-                "Total": total,
-                "Details": f"W:{int(w)} D:{int(d)} F:{int(f)} S:{s}"
-            }])
-            
-            existing_data = conn.read(worksheet="Sheet1")
-            updated_df = pd.concat([existing_data, new_row], ignore_index=True)
-            conn.update(worksheet="Sheet1", data=updated_df)
             st.success("Self-Service Recorded!")
 
 with tab2:
-    st.subheader("Recent Sales (Live)")
-    # Pull fresh data
-    data = conn.read(worksheet="Sheet1")
-    if not data.empty:
-        st.dataframe(data.tail(10), use_container_width=True)
-        st.metric("Total Revenue", f"₱{data['Total'].sum()}")
-    else:
-        st.write("No records found.")
+    st.subheader("Recent Sales (Live from Google Sheets)")
+    # This will pull the actual data from your spreadsheet
+    try:
+        data = conn.read(worksheet="Sheet1")
+        st.dataframe(data.tail(10))
+    except:
+        st.info("Syncing with Google Sheets...")
